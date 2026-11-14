@@ -17,6 +17,7 @@ export function Player({
   onRate,
   onVolume,
   onNote,
+  hideNoteButton = false,
 }: {
   episode: Episode;
   state: Omit<TransportState, "loadedId">;
@@ -25,6 +26,7 @@ export function Player({
   onRate: (n: number) => void;
   onVolume: (n: number) => void;
   onNote: () => void;
+  hideNoteButton?: boolean;
 }) {
   return (
     <section className="player">
@@ -139,9 +141,11 @@ export function Player({
         <span>
           <span className="live-dot" /> 本地无损音频 · 中文对白
         </span>
-        <button onClick={onNote}>
-          <BookmarkPlus size={13} /> 标记此刻
-        </button>
+        {!hideNoteButton && (
+          <button onClick={onNote}>
+            <BookmarkPlus size={13} /> 标记此刻
+          </button>
+        )}
       </div>
     </section>
   );

@@ -12,6 +12,7 @@ import {
   Check,
   ChevronRight,
   Info,
+  GitCompare,
 } from "lucide-react";
 import {
   CASE_CONTENT,
@@ -24,19 +25,30 @@ import { Player } from "../features/listening";
 import { TranscriptPanel } from "../features/transcript";
 import { EvidencePanel, canCollectSound } from "../features/evidence";
 import { ProfilesDialog } from "../features/profiles";
+import {
+  ReplayCenterDialog,
+  ReplayStage,
+  useReplayArchive,
+} from "../features/replay";
 import { currentCue } from "../features/transcript";
 import { useCase } from "./useCase";
 export function App() {
   const c = useCase(),
     [tab, setTab] = useState<"transcript" | "evidence">("transcript"),
     [profiles, setProfiles] = useState(false),
+    [replayCenter, setReplayCenter] = useState(false),
     [about, setAbout] = useState(false);
+  const replay = useReplayArchive(CASE_CONTENT, c.slots);
   const scene = CASE_CONTENT.scenes.find((s) => s.id === c.story.sceneId)!,
     cue = currentCue(c.episode, c.audio.view.position),
     activeSlot = c.slots.find((s) => s.id === c.activeId);
   const showProfiles = () => {
     c.audio.pause();
     setProfiles(true);
+  };
+  const showReplayCenter = () => {
+    c.audio.pause();
+    setReplayCenter(true);
   };
   return (
     <div className="app">
@@ -62,6 +74,15 @@ export function App() {
         <button className="archive-button" onClick={showProfiles}>
           <FolderOpen size={15} />
           调查存档<span>{c.slots.length}</span>
+        </button>
+        <button
+          className="archive-button replay-entry"
+          onClick={showReplayCenter}
+          disabled={c.slots.length < 2}
+          title={c.slots.length < 2 ? "保存至少两份调查存档后即可生成路线节目单" : "对照两份存档的收听路线"}
+        >
+          <GitCompare size={15} />
+          路线收听档案<span>{replay.programs.length}</span>
         </button>
         <div className="avatar">林</div>
       </header>
@@ -305,6 +326,34 @@ export function App() {
           onExport={c.download}
           onClose={() => setProfiles(false)}
         />
+      )}
+      {replayCenter && !replay.active && (
+        <ReplayCenterDialog
+          content={CASE_CONTENT}
+          slots={c.slots}
+          programs={replay.programs}
+          notice={replay.notice}
+          onCreate={replay.createFromSlots}
+          onDelete={replay.remove}
+          onExport={replay.download}
+          onImport={replay.importText}
+          onOpen={replay.open}
+          onClose={() => {
+            replay.clearNotice();
+            setReplayCenter(false);
+          }}
+        />
+      )}
+      {replay.active && (
+        <div className="replay-overlay">
+          <ReplayStage
+            program={replay.active}
+            onExit={() => {
+              replay.close();
+              setReplayCenter(false);
+            }}
+          />
+        </div>
       )}
       {about && (
         <div className="modal-backdrop">
